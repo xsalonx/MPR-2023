@@ -25,15 +25,15 @@ while [[ $# -gt 0 ]]; do
             lOMP_SUBMEASURES_NO=$2
             shift 2;
         ;;
-        --m)
+        -m)
             lOMP_DIV_MIN=$2
             shift 2;
         ;;
-        --s)
+        -s)
             lOMP_DIV_STEP=$2
             shift 2;
         ;;
-        --S)
+        -S)
             lOMP_DIV_MAX=$2
             shift 2;
         ;;
@@ -64,7 +64,7 @@ g++ -Wall main.c -o $BUILD_DIR/$PROG_NAME -fopenmp
 
 
 cd $BUILD_DIR
-env_file=meta-measures$OUT_FILE_SUFIX.env
+env_file="$OUT_FILE_BASE_NAME.env"
 env | grep OMP_ > $env_file
 cat $env_file
 
