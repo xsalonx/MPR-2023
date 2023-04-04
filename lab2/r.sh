@@ -25,6 +25,18 @@ while [[ $# -gt 0 ]]; do
             lOMP_SUBMEASURES_NO=$2
             shift 2;
         ;;
+        --m)
+            lOMP_DIV_MIN=$2
+            shift 2;
+        ;;
+        --s)
+            lOMP_DIV_STEP=$2
+            shift 2;
+        ;;
+        --S)
+            lOMP_DIV_MAX=$2
+            shift 2;
+        ;;
         --out)
             OUT_FILE_BASE_NAME=$2
             shift 2;
@@ -38,6 +50,11 @@ done
 
 export lOMP_DIV_MULTIPLIER=${lOMP_DIV_MULTIPLIER:-1}
 export lOMP_SUBMEASURES_NO=${lOMP_SUBMEASURES_NO:-10}
+
+export lOMP_DIV_MIN=${lOMP_DIV_MIN:-1}
+export lOMP_DIV_STEP=${lOMP_DIV_STEP:-1}
+export lOMP_DIV_MAX=${lOMP_DIV_MAX:-3}
+
 OUT_FILE_BASE_NAME=${OUT_FILE_BASE_NAME:-openmp-measures}$OUT_FILE_SUFIX
 
 # rm build/*.csv
@@ -52,7 +69,7 @@ env | grep OMP_ > $env_file
 cat $env_file
 
 get_sch_fn() {
-    echo "$OUT_FILE_BASE_NAME""_$*.csv"
+    echo "$OUT_FILE_BASE_NAME$1.csv"
 }
 
 
@@ -110,7 +127,7 @@ for (( s=$START_SIZE; s <= $MAX_NSIZE; s+=$STEP )); do
 
     # chunk_size = s / num_threads / div 
     for sch_t in 'static' 'dynamic' 'guided'; do
-        for div in 1 $(seq 2 1 3); do
+        for div in $(seq $lOMP_DIV_MIN $lOMP_DIV_STEP $lOMP_DIV_MAX); do
             chunk_size=$(($s / $lOMP_DIV_MULTIPLIER / $div))
             OMP_SCHEDULE="$sch_t,$chunk_size"
             CHUNK_SIZE_DIV=$(($lOMP_DIV_MULTIPLIER * $div))
