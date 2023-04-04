@@ -14,6 +14,9 @@ int* allocate_random_array(int parallel, size_t n, double min, double max) {
         #pragma omp parallel shared(ptr), private(seed, pp)
         {
             pp = ptr;
+            int tid = omp_get_thread_num();
+            seed[0] = ((tid * tid + 15) * 3)/7;
+
             #pragma omp for schedule(runtime)
             for (size_t i=0; i < n; i++) {
                 pp[i] =  min + erand48(seed);
