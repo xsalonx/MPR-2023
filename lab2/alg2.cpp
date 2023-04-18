@@ -21,7 +21,19 @@ int get_bucket_id(double v, double min, double one_b_width) {
     return (int)((v - min) / one_b_width);
 }
 
-void sequence_sort(double *ptr, size_t n, double min, double max, bucket_t* buckets, size_t buckets_no) {
+namespace sequence
+{
+void generateRandomValues(double * ptr, size_t n, double min, double max, unsigned short * seed) {
+    for (size_t i=0; i < n; i++) {
+        ptr[i] = min + erand48(seed) * (max- min) ;
+    }
+}
+
+double getBucketWidth(double min, double max, size_t buckets_no) {
+    return (max - min) / buckets_no;
+}
+
+void initializeBuckets(double min, double max, bucket_t* buckets, size_t buckets_no) {
     double one_b_width = (max - min) / buckets_no;
     double border = min;
     for (int i=0; i<buckets_no; i++) {
@@ -29,7 +41,10 @@ void sequence_sort(double *ptr, size_t n, double min, double max, bucket_t* buck
         border += one_b_width;
         buckets[i].r = border;
     }
+}
 
+void writeValuesToBuckets(double *ptr, size_t n, double min, double max, bucket_t* buckets, size_t buckets_no) {
+    double one_b_width = getBucketWidth(min, max, buckets_no);
     double v;
     int b_id;
     for (int i=0; i<n; i++) {
@@ -37,12 +52,16 @@ void sequence_sort(double *ptr, size_t n, double min, double max, bucket_t* buck
         b_id = get_bucket_id(v, min, one_b_width);
         buckets[b_id].container.push_back(v);
     }
+}
 
+void sortBuckets(bucket_t* buckets, size_t buckets_no) {
     for (int i=0; i<buckets_no; i++) {
         auto& bucket = buckets[i].container;
         sort(bucket.begin(), bucket.end());
     }
+}
 
+void mergeBuckets(double *ptr, bucket_t* buckets, size_t buckets_no) {
     int ptr_i = 0;
     for (int bucket_id=0; bucket_id < buckets_no; bucket_id++) {
         for (int i = 0; i < buckets[bucket_id].container.size(); i++) {
@@ -51,8 +70,11 @@ void sequence_sort(double *ptr, size_t n, double min, double max, bucket_t* buck
         }
     }
 }
+}
 
-double generateRandomValues(double * ptr, size_t n, double min, double max, unsigned short * seed) {
+namespace parallel
+{
+void generateRandomValues(double * ptr, size_t n, double min, double max, unsigned short * seed) {
     double *pp = ptr;
     int tid = omp_get_thread_num();
     seed[0] = ((tid * tid + 15) * 3)/7;
@@ -118,6 +140,8 @@ void mergeBuckets(double *ptr, bucket_t* buckets, size_t buckets_no) {
     }
 }
 
+}
+
 void printBuckets(bucket_t* buckets, size_t buckets_no) {
     for (int i=0; i<buckets_no; i++) {
         printf("%lf %lf :: ", buckets[i].l, buckets[i].r);
@@ -147,14 +171,16 @@ bool is_bucket_sorted(double* arr, size_t n) {
 
 double* random_bucket_sort(int parallel, size_t n, double min, double max, size_t buckets_no) {
     double *ptr = (double*)malloc(sizeof(double) * n);
+    double totalTimerStart = omp_get_wtime(), totalTimerEnd;
     double timerStart = omp_get_wtime(), timerEnd;
     unsigned short seed[3];
     bucket_t* buckets = new bucket_t[buckets_no];
     if (parallel) {
         #pragma omp parallel shared(ptr, buckets), private(seed)
         {
+            #pragma omp barrier
             timerStart = omp_get_wtime();
-            generateRandomValues(ptr, n, min, max, seed);
+            parallel::generateRandomValues(ptr, n, min, max, seed);
             #pragma omp barrier
             timerEnd = omp_get_wtime();
             if (omp_get_thread_num() == 0) {
@@ -163,7 +189,7 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
 
             #pragma omp barrier
             timerStart = omp_get_wtime();
-            initializeBuckets(min, max, buckets, buckets_no);
+            parallel::initializeBuckets(min, max, buckets, buckets_no);
             #pragma omp barrier
             timerEnd = omp_get_wtime();
             if (omp_get_thread_num() == 0) {
@@ -172,7 +198,7 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
 
             #pragma omp barrier
             timerStart = omp_get_wtime();
-            writeValuesToBuckets(ptr, n, min, max, buckets, buckets_no);
+            parallel::writeValuesToBuckets(ptr, n, min, max, buckets, buckets_no);
             #pragma omp barrier
             timerEnd = omp_get_wtime();
             if (omp_get_thread_num() == 0) {
@@ -181,7 +207,7 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
 
             #pragma omp barrier
             timerStart = omp_get_wtime();
-            sortBuckets(buckets, buckets_no);
+            parallel::sortBuckets(buckets, buckets_no);
             #pragma omp barrier
             timerEnd = omp_get_wtime();
             if (omp_get_thread_num() == 0) {
@@ -190,7 +216,7 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
 
             #pragma omp barrier
             timerStart = omp_get_wtime();
-            mergeBuckets(ptr, buckets, buckets_no);
+            parallel::mergeBuckets(ptr, buckets, buckets_no);
             #pragma omp barrier
             timerEnd = omp_get_wtime();
             if (omp_get_thread_num() == 0) {
@@ -199,15 +225,44 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
         }
 
     } else {
-        for (size_t i=0; i < n; i++) {
-            ptr[i] = min + erand48(seed) * (max- min) ;
+        timerStart = omp_get_wtime();
+        sequence::generateRandomValues(ptr, n, min, max, seed);
+        timerEnd = omp_get_wtime();
+        if (omp_get_thread_num() == 0) {
+            printf("Time taken by generating random values: %lf\n", (timerEnd - timerStart));
         }
 
-        sequence_sort(ptr, n, min, max, buckets, buckets_no);
+        timerStart = omp_get_wtime();
+        sequence::initializeBuckets(min, max, buckets, buckets_no);
+        timerEnd = omp_get_wtime();
+        if (omp_get_thread_num() == 0) {
+            printf("Time taken by initializing buckets: %lf\n", (timerEnd - timerStart));
+        }
+
+        timerStart = omp_get_wtime();
+        sequence::writeValuesToBuckets(ptr, n, min, max, buckets, buckets_no);
+        timerEnd = omp_get_wtime();
+        if (omp_get_thread_num() == 0) {
+            printf("Time taken by writing values to buckets: %lf\n", (timerEnd - timerStart));
+        }
+
+        timerStart = omp_get_wtime();
+        sequence::sortBuckets(buckets, buckets_no);
+        timerEnd = omp_get_wtime();
+        if (omp_get_thread_num() == 0) {
+            printf("Time taken by sorting inside buckets: %lf\n", (timerEnd - timerStart));
+        }
+
+        timerStart = omp_get_wtime();
+        sequence::mergeBuckets(ptr, buckets, buckets_no);
+        timerEnd = omp_get_wtime();
+        if (omp_get_thread_num() == 0) {
+            printf("Time taken by merging buckets: %lf\n", (timerEnd - timerStart));
+        }
     }
 
-    timerEnd = omp_get_wtime();
-    printf("%lf\n", (timerEnd - timerStart));
+    totalTimerEnd = omp_get_wtime();
+    printf("Total taken time: %lf\n", (totalTimerEnd - totalTimerStart));
     if (is_bucket_sorted(ptr, n)) {
         printf("Bucket is sorted\n");
     } else {
