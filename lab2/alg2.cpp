@@ -14,6 +14,7 @@ struct bucket_t {
     double r;
     bucket_v container;
     std::mutex bucketMutex;
+    int previousElements;
 };
 
 int get_bucket_id(double v, double min, double one_b_width) {
@@ -40,6 +41,14 @@ void sequence_sort(double *ptr, size_t n, double min, double max, bucket_t* buck
     for (int i=0; i<buckets_no; i++) {
         auto& bucket = buckets[i].container;
         sort(bucket.begin(), bucket.end());
+    }
+
+    int ptr_i = 0;
+    for (int bucket_id=0; bucket_id < buckets_no; bucket_id++) {
+        for (int i = 0; i < buckets[bucket_id].container.size(); i++) {
+            ptr[ptr_i] = buckets[bucket_id].container[i];
+            ptr_i++;
+        }
     }
 }
 
@@ -69,6 +78,22 @@ void alg2_parallel_sort(double *ptr, size_t n, double min, double max, bucket_t*
         auto& bucket = buckets[i].container;
         sort(bucket.begin(), bucket.end());
     }
+
+    #pragma omp barrier
+    for (int i = 0; i < buckets_no; i++) {
+        if (i == 0)
+            buckets[i].previousElements = 0;
+        else
+            buckets[i].previousElements = buckets[i - 1].previousElements + buckets[i - 1].container.size();
+    }
+
+    #pragma omp for schedule(static)
+    for (int bucket_id=0; bucket_id < buckets_no; bucket_id++) {
+        int offset = buckets[bucket_id].previousElements;
+        for (int i = 0; i < buckets[bucket_id].container.size(); i++) {
+            ptr[offset + i] = buckets[bucket_id].container[i];
+        }
+    }
 }
 
 void printBuckets(bucket_t* buckets, size_t buckets_no) {
@@ -79,6 +104,23 @@ void printBuckets(bucket_t* buckets, size_t buckets_no) {
         } 
         printf("\n");
     }
+}
+
+void printArray(double* arr, size_t n) {
+    printf("%f", arr[0]);
+    for (int i = 0; i < n; i++) {
+        printf(", %f", arr[i]);
+    }
+    printf("\n");
+}
+
+bool is_bucket_sorted(double* arr, size_t n) {
+    for (int i = 1; i < n; i++) {
+        if (arr[i-1] > arr[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 double* random_bucket_sort(int parallel, size_t n, double min, double max, size_t buckets_no) {
@@ -101,6 +143,7 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
             alg2_parallel_sort(ptr, n, min, max, buckets, buckets_no);
         }
         /*printBuckets(buckets, buckets_no);*/
+        /*printArray(ptr, n);*/
 
     } else {
         for (size_t i=0; i < n; i++) {
@@ -108,11 +151,17 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
         }
 
         sequence_sort(ptr, n, min, max, buckets, buckets_no);
+        /*printArray(ptr, n);*/
         /*printBuckets(buckets);*/
     }
 
     double t2 = omp_get_wtime();
     printf("%lf\n", (t2 - t1));
+    if (is_bucket_sorted(ptr, n)) {
+        printf("Bucket is sorted\n");
+    } else {
+        printf("Bucket is NOT sorted\n");
+    }
     return ptr;
 }
 
