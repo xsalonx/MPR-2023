@@ -1,0 +1,4 @@
+
+0_random_generating:0.127425,1-buckets_ins_filling_(squash):1.073838,2-buckets_sorting:2.395255,3-buckets_to_main_array:0.166585,total_time:3.785674
+0_random_generating:0.035044,1_buckets_ins_filling_(squash):0.528902,2_buckets_sorting:0.630981,3_buckets_to_main_array:0.031373,total_time:1.227556
+0_random_generating:0.033913,1-buckets_ins_filling_(squash):0.690942,2-buckets_sorting:0.620033,3-buckets_to_main_array:0.065644,total_time:1.431494

@@ -37,6 +37,7 @@ void print_buckets(bucket_arr_t &buckets) {
 }
 
 
+
 double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buckets_no) {
     double *ptr = (double*)malloc(sizeof(double) * n);
     double *pp;
@@ -75,7 +76,7 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
             bid = get_bucket_id(v, min, max, buckets_no);
             (*my_buckets)[bid].container.push_back(v);
         }
-        // t[local_time_ctr++] = omp_get_wtime();
+        // if (omp_get_thread_num() == 0) t[time_ctr++] = omp_get_wtime();
         // squashing buckets
         int k = 0;
         #pragma omp for schedule(runtime)
@@ -132,7 +133,7 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
 
     printf("%d_%s:%lf", 0, t_names[1].c_str(), t[1] - t[0]);
     for (int i=2; i<time_ctr; i++) {
-        printf(",%d-%s:%lf", i, t_names[i].c_str(), t[i] - t[i-1]);
+        printf(",%d-%s:%lf", i - 1, t_names[i].c_str(), t[i] - t[i-1]);
     }
     return ptr;
 }
@@ -189,13 +190,13 @@ double* random_bucket_sort_seq(size_t n, double min, double max, size_t buckets_
     // results printing
     std::string t_names[32] = {""
         ,"random_generating"
-        ,"buckets_ins_and_filling(squash)"
+        ,"buckets_ins_filling_(squash)"
         ,"buckets_sorting"
         ,"buckets_to_main_array"};
 
     printf("%d_%s:%lf", 0, t_names[1].c_str(), t[1] - t[0]);
     for (int i=2; i<time_ctr; i++) {
-        printf(",%d-%s:%lf", i, t_names[i].c_str(), t[i] - t[i-1]);
+        printf(",%d-%s:%lf", i - 1, t_names[i].c_str(), t[i] - t[i-1]);
     }
     return ptr;
 }

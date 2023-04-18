@@ -21,8 +21,8 @@ case $ALGO in
     ;;
 esac
 
-ARR_SIZE=10000000
-BUCKETS_NO=100000
+ARR_SIZE=${2:-1000000}
+BUCKETS_NO=${3:-1000}
 
 PROG_NAME="bucket_alg$ALGO.bin"
 SRC_NAME="bucket_alg$ALGO.cpp"
