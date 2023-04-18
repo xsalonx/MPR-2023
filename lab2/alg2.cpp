@@ -52,15 +52,22 @@ void sequence_sort(double *ptr, size_t n, double min, double max, bucket_t* buck
     }
 }
 
-void alg2_parallel_sort(double *ptr, size_t n, double min, double max, bucket_t* buckets, size_t buckets_no) {
-    double one_b_width = (max - min) / buckets_no;
+double getBucketWidth(double min, double max, size_t buckets_no) {
+    return (max - min) / buckets_no;
+}
+
+void createBuckets(double min, double max, bucket_t* buckets, size_t buckets_no) {
+    double one_b_width = getBucketWidth(min, max, buckets_no);
     double border = min;
     for (int i=0; i<buckets_no; i++) {
         buckets[i].l = border;
         border += one_b_width;
         buckets[i].r = border;
     }
+}
 
+void writeValuesToBuckets(double *ptr, size_t n, double min, double max, bucket_t* buckets, size_t buckets_no) {
+    double one_b_width = getBucketWidth(min, max, buckets_no);
     double v;
     int b_id;
     #pragma omp for schedule(static)
@@ -71,14 +78,18 @@ void alg2_parallel_sort(double *ptr, size_t n, double min, double max, bucket_t*
         buckets[b_id].container.push_back(v);
         buckets[b_id].bucketMutex.unlock();
     }
+}
 
+void sortBuckets(bucket_t* buckets, size_t buckets_no) {
     #pragma omp barrier
     #pragma omp for schedule(static)
     for (int i=0; i<buckets_no; i++) {
         auto& bucket = buckets[i].container;
         sort(bucket.begin(), bucket.end());
     }
+}
 
+void mergeBuckets(double *ptr, bucket_t* buckets, size_t buckets_no) {
     #pragma omp barrier
     for (int i = 0; i < buckets_no; i++) {
         if (i == 0)
@@ -94,6 +105,16 @@ void alg2_parallel_sort(double *ptr, size_t n, double min, double max, bucket_t*
             ptr[offset + i] = buckets[bucket_id].container[i];
         }
     }
+}
+
+void alg2_parallel_sort(double *ptr, size_t n, double min, double max, bucket_t* buckets, size_t buckets_no) {
+    createBuckets(min, max, buckets, buckets_no);
+
+    writeValuesToBuckets(ptr, n, min, max, buckets, buckets_no);
+
+    sortBuckets(buckets, buckets_no);
+
+    mergeBuckets(ptr, buckets, buckets_no);
 }
 
 void printBuckets(bucket_t* buckets, size_t buckets_no) {
