@@ -151,7 +151,7 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
     unsigned short seed[3];
     bucket_t* buckets = new bucket_t[buckets_no];
     if (parallel) {
-        #pragma omp parallel shared(ptr, buckets), private(seed)
+        #pragma omp parallel shared(ptr, buckets), private(seed, timerStart)
         {
             timerStart = omp_get_wtime();
             generateRandomValues(ptr, n, min, max, seed);
@@ -220,7 +220,8 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
 int main(int argc, char **argv) {
     int parallel = atoi(argv[1]);
     size_t arr_size = strtoull(argv[2], NULL, 10);
-    double* ptr = random_bucket_sort(parallel, arr_size, 0, 10, 1000);
+    size_t buckets_no = strtoull(argv[3], NULL, 10);
+    double* ptr = random_bucket_sort(parallel, arr_size, 0, 10, buckets_no);
     free(ptr);
     return 0;
 }

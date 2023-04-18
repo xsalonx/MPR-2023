@@ -76,10 +76,8 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
             bid = get_bucket_id(v, min, max, buckets_no);
             (*my_buckets)[bid].container.push_back(v);
         }
-
-        t[local_time_ctr++] = omp_get_wtime();
-
-        // passing to main array
+        // t[local_time_ctr++] = omp_get_wtime();
+        // squashing buckets
         int k = 0;
         #pragma omp for schedule(runtime)
         for (bid=0; bid < buckets_no; bid++) {
@@ -124,14 +122,11 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
         time_ctr = local_time_ctr;
     }
 
-    t[time_ctr++] = omp_get_wtime();
     std::string t_names[32] = {""
         ,"random_generating"
-        ,"buckets_ins_and_filling"
-        ,"buckets_squash"
+        ,"buckets_ins_filling_squash"
         ,"buckets_sorting"
-        ,"buckets_to_main_array"
-        ,"th-join"};
+        ,"buckets_to_main_array"};
 
     printf("%d_%s:%lf", 0, t_names[1].c_str(), t[1] - t[0]);
     for (int i=2; i<time_ctr; i++) {
@@ -230,7 +225,7 @@ int main(int argc, char **argv) {
     double* ptr = random_bucket_sort(parallel, arr_size, 0, 10, buckets_no);
     bool sorted = std::is_sorted(ptr, ptr + arr_size);
     free(ptr);
-    // std::cout << "Is sorted: " << std::boolalpha << sorted;
+
     if (!sorted) {
         std::cout << "Not sorted" << std::endl;
         exit(1);
