@@ -4,6 +4,7 @@
 #include <time.h>
 #include <vector>
 #include <mutex>
+#include <algorithm>
 
 
 typedef std::vector<double> bucket_v;
@@ -35,6 +36,11 @@ void sequence_sort(double *ptr, size_t n, double min, double max, bucket_t* buck
         b_id = get_bucket_id(v, min, one_b_width);
         buckets[b_id].container.push_back(v);
     }
+
+    for (int i=0; i<buckets_no; i++) {
+        auto& bucket = buckets[i].container;
+        sort(bucket.begin(), bucket.end());
+    }
 }
 
 void alg2_parallel_sort(double *ptr, size_t n, double min, double max, bucket_t* buckets, size_t buckets_no) {
@@ -55,6 +61,13 @@ void alg2_parallel_sort(double *ptr, size_t n, double min, double max, bucket_t*
         buckets[b_id].bucketMutex.lock();
         buckets[b_id].container.push_back(v);
         buckets[b_id].bucketMutex.unlock();
+    }
+
+    #pragma omp barrier
+    #pragma omp for schedule(static)
+    for (int i=0; i<buckets_no; i++) {
+        auto& bucket = buckets[i].container;
+        sort(bucket.begin(), bucket.end());
     }
 }
 
@@ -86,12 +99,8 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
                 pp[i] =  min + erand48(seed) * (max- min);
             }
             alg2_parallel_sort(ptr, n, min, max, buckets, buckets_no);
-            /*#pragma omp barrier
-            if (omp_get_thread_num() == 0) {
-                printBuckets(buckets);
-            }*/
         }
-        /*printBuckets(buckets);*/
+        /*printBuckets(buckets, buckets_no);*/
 
     } else {
         for (size_t i=0; i < n; i++) {
@@ -111,7 +120,7 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
 int main(int argc, char **argv) {
     int parallel = atoi(argv[1]);
     size_t arr_size = strtoull(argv[2], NULL, 10);
-    double* ptr = random_bucket_sort(parallel, arr_size, 0, 10, 5);
+    double* ptr = random_bucket_sort(parallel, arr_size, 0, 10, 1000);
     free(ptr);
     return 0;
 }
