@@ -121,18 +121,8 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
 
     }
 
-    print_buckets(last_buckets);
-    // printf("\n\n");
-    // for (int i=0; i<1024; i++) {
-    //     bucket_arr_t* r = th_buckets[i];
-    //     if (r == nullptr)
-    //         break;
-    //     printf("\nBuckets of thread %d:\n", i);
-    //     print_buckets(*r);
-    // }
-
-    
-    // double t2 = omp_get_wtime();
+    // print_buckets(last_buckets);
+    double t2 = omp_get_wtime();
     // printf("seq total time = %lf\n", (t2 - t1));
     return ptr;
 }
@@ -180,17 +170,22 @@ double* random_bucket_sort_seq(size_t n, double min, double max, size_t buckets_
     sequence_sort(ptr, n, min, max, buckets_no);
 
     double t2 = omp_get_wtime();
-    printf("seq total time = %lf\n", (t2 - t1));
+    // printf("seq total time = %lf\n", (t2 - t1));
     return ptr;
 }
 
 double* random_bucket_sort(int parallel, size_t n, double min, double max, size_t buckets_no) {
+    double* res = nullptr;
+    double t1 = omp_get_wtime();
     if (parallel) {
-        return random_bucket_sort_parallel(n, min, max, buckets_no);
+        res = random_bucket_sort_parallel(n, min, max, buckets_no);
     } else {
-        // return random_bucket_sort_seq(n, min, max, buckets_no);
-        return nullptr;
+        res = random_bucket_sort_seq(n, min, max, buckets_no);
     }
+    double t2 = omp_get_wtime();
+    printf("total time = %lf\n", (t2 - t1));
+
+    return res;
 }
 
 
@@ -207,18 +202,8 @@ int main(int argc, char **argv) {
     size_t arr_size = strtoull(argv[2], NULL, 10);
     size_t buckets_no = strtoull(argv[3], NULL, 10);
     double* ptr = random_bucket_sort(parallel, arr_size, 0, 10, buckets_no);
-    print_arr(ptr, arr_size);
+    // print_arr(ptr, arr_size);
     free(ptr);
-
-    // bucket_arr_t bs[10];
-    // bs[0] = bucket_arr_t(10);
-    // std::cout << bs[0][0].container.size() << std::endl;
-    // #pragma omp parallel
-    // {
-    //     std::cout << omp_get_num_threads() << std::endl;
-    // }
-    //         std::cout << omp_get_num_threads() << std::endl;
-
     printf("\n");
     return 0;
 }
@@ -226,3 +211,24 @@ int main(int argc, char **argv) {
 
 
 
+
+
+
+    // printf("\n\n");
+    // for (int i=0; i<1024; i++) {
+    //     bucket_arr_t* r = th_buckets[i];
+    //     if (r == nullptr)
+    //         break;
+    //     printf("\nBuckets of thread %d:\n", i);
+    //     print_buckets(*r);
+    // }
+
+
+  // bucket_arr_t bs[10];
+    // bs[0] = bucket_arr_t(10);
+    // std::cout << bs[0][0].container.size() << std::endl;
+    // #pragma omp parallel
+    // {
+    //     std::cout << omp_get_num_threads() << std::endl;
+    // }
+    //         std::cout << omp_get_num_threads() << std::endl;

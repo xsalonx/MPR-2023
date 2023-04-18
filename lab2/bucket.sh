@@ -14,7 +14,7 @@ echo '* * * * * * * * * * *'
 echo parallel: $PARALLEL
 echo '* * * * * * * * * * *'
 
-./$BUILD_DIR/$PROG_NAME $PARALLEL 100 10
+./$BUILD_DIR/$PROG_NAME $PARALLEL 100000 1000
 
 
 
