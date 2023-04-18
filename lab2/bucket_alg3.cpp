@@ -6,6 +6,7 @@
 #include <iostream>
 #include <algorithm>
 #include <mutex>
+#include <string>
 
 typedef std::vector<double> bucket_v;
 
@@ -22,17 +23,11 @@ typedef std::vector<bucket_t> bucket_arr_t;
 
 int get_bucket_id(double v, double min, double max, int buckets_no) {
     double one_b_width = (max - min) / buckets_no;
-    int bid = (int)((v - min) / one_b_width);
-    // printf("%lf -> %d  --%d\n", v, bid, bid == (int)v);
-    // if (bid != (int)v) {
-    //     exit(1);
-    // }
-    return bid;
+    return (int)((v - min) / one_b_width);
 }
 
 void print_buckets(bucket_arr_t &buckets) {
     for (int i=0; i<buckets.size(); i++) {
-        // printf("%d' %lf %lf :: ",i, buckets[i].l, buckets[i].r);
         printf("%d; :: ",i);
         for (int j=0; j < buckets[i].container.size(); j++) {
             printf("%lf ", buckets[i].container[j]);
@@ -45,15 +40,19 @@ void print_buckets(bucket_arr_t &buckets) {
 double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buckets_no) {
     double *ptr = (double*)malloc(sizeof(double) * n);
     double *pp;
-    double t1 = omp_get_wtime();
+    double t[1024];
+    int time_ctr = 1;
+
     unsigned short seed[3];
-    
     bucket_arr_t last_buckets(buckets_no);
     bucket_arr_t* th_buckets[1024];
 
 
-    #pragma omp parallel shared(ptr, last_buckets, th_buckets, min, max, buckets_no), private(seed, pp)
+    #pragma omp parallel shared(ptr, last_buckets, th_buckets, min, max, buckets_no, time_ctr), private(seed, pp)
     {   
+        int local_time_ctr = 0;
+        t[local_time_ctr++] = omp_get_wtime();
+
         // array filling wih random
         pp = ptr;
         int tid = omp_get_thread_num();
@@ -64,6 +63,7 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
             pp[i] =  min + erand48(seed) * (max - min);
         }
 
+        t[local_time_ctr++] = omp_get_wtime();
 
         bucket_arr_t* my_buckets = new bucket_arr_t(buckets_no);
         th_buckets[tid] = my_buckets;
@@ -77,10 +77,7 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
             (*my_buckets)[bid].container.push_back(v);
         }
 
-        // buckets sorting with for catenating - TODO
-        // for (int i=0; i<buckets_no; i++) {
-        //     std::sort((*my_buckets)[i].container.begin(), (*my_buckets)[i].container.end());
-        // }
+        t[local_time_ctr++] = omp_get_wtime();
 
         // passing to main array
         int k = 0;
@@ -93,11 +90,15 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
             } 
         }
 
+        t[local_time_ctr++] = omp_get_wtime();
+
         // buckets sorting - TODO        
         #pragma omp for schedule(runtime)
         for (bid=0; bid<buckets_no; bid++) {
             std::sort(last_buckets[bid].container.begin(), last_buckets[bid].container.end());
         }
+
+        t[local_time_ctr++] = omp_get_wtime();
 
         // buckets to final array
         #pragma omp for schedule(runtime)
@@ -118,18 +119,45 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
             }
         }
 
-
+        t[local_time_ctr++] = omp_get_wtime();
+        time_ctr = local_time_ctr;
     }
 
-    // print_buckets(last_buckets);
-    double t2 = omp_get_wtime();
-    // printf("seq total time = %lf\n", (t2 - t1));
+    t[time_ctr++] = omp_get_wtime();
+    std::string t_names[32] = {""
+        ,"random_generating"
+        ,"buckets_ins_and_filling"
+        ,"buckets_squash"
+        ,"buckets_sorting"
+        ,"buckets_to_main_array"
+        ,"th-join"};
+
+    printf("%d_%s:%lf", 0, t_names[1].c_str(), t[1] - t[0]);
+    for (int i=2; i<time_ctr; i++) {
+        printf(",%d-%s:%lf", i, t_names[i].c_str(), t[i] - t[i-1]);
+    }
+    printf("\n");
     return ptr;
 }
 
 
 
-void sequence_sort(double *ptr, size_t n, double min, double max, size_t buckets_no) {
+double* random_bucket_sort_seq(size_t n, double min, double max, size_t buckets_no) {
+    double t[1024];
+    int time_ctr = 0;
+    t[time_ctr++] = omp_get_wtime();
+
+    double *ptr = (double*)malloc(sizeof(double) * n);
+    double *pp;
+    unsigned short seed[3];
+
+    for (size_t i=0; i < n; i++) {
+        seed[0] = 5;//omp_get_wtime();
+        ptr[i] = min + erand48(seed) * (max - min) ;
+    }
+
+    t[time_ctr++] = omp_get_wtime();
+
     bucket_arr_t buckets(buckets_no);
     double v;
     int b_id;
@@ -140,10 +168,14 @@ void sequence_sort(double *ptr, size_t n, double min, double max, size_t buckets
         buckets[b_id].container.push_back(v);
     }
 
+    t[time_ctr++] = omp_get_wtime();
+
     // buckets sorting
     for (int i=0; i<buckets_no; i++) {
         std::sort(buckets[i].container.begin(), buckets[i].container.end());
     }
+
+    t[time_ctr++] = omp_get_wtime();
 
     // passing to main array
     int k = 0;
@@ -153,24 +185,20 @@ void sequence_sort(double *ptr, size_t n, double min, double max, size_t buckets
             k++;
         } 
     }
-    
-}
 
-double* random_bucket_sort_seq(size_t n, double min, double max, size_t buckets_no) {
-    double *ptr = (double*)malloc(sizeof(double) * n);
-    double *pp;
-    double t1 = omp_get_wtime();
-    unsigned short seed[3];
+    t[time_ctr++] = omp_get_wtime();
 
-    for (size_t i=0; i < n; i++) {
-        seed[0] = 5;//omp_get_wtime();
-        ptr[i] = min + erand48(seed) * (max - min) ;
+    std::string t_names[32] = {""
+        ,"random_generating"
+        ,"buckets_ins_and_filling"
+        ,"buckets_sorting"
+        ,"buckets_to_main_array"};
+
+    printf("%d_%s:%lf", 0, t_names[1].c_str(), t[1] - t[0]);
+    for (int i=2; i<time_ctr; i++) {
+        printf(",%d-%s:%lf", i, t_names[i].c_str(), t[i] - t[i-1]);
     }
-
-    sequence_sort(ptr, n, min, max, buckets_no);
-
-    double t2 = omp_get_wtime();
-    // printf("seq total time = %lf\n", (t2 - t1));
+    printf("\n");
     return ptr;
 }
 
