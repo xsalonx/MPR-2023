@@ -41,7 +41,7 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
     double *ptr = (double*)malloc(sizeof(double) * n);
     double *pp;
     double t[1024];
-    int time_ctr = 1;
+    int time_ctr = 0;
 
     unsigned short seed[3];
     bucket_arr_t last_buckets(buckets_no);
@@ -50,8 +50,7 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
 
     #pragma omp parallel shared(ptr, last_buckets, th_buckets, min, max, buckets_no, time_ctr), private(seed, pp)
     {   
-        int local_time_ctr = 0;
-        t[local_time_ctr++] = omp_get_wtime();
+        if (omp_get_thread_num() == 0) t[time_ctr++] = omp_get_wtime();
 
         // array filling wih random
         pp = ptr;
@@ -63,7 +62,7 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
             pp[i] =  min + erand48(seed) * (max - min);
         }
 
-        t[local_time_ctr++] = omp_get_wtime();
+        if (omp_get_thread_num() == 0) t[time_ctr++] = omp_get_wtime();
 
         // filling buckets
         bucket_arr_t* my_buckets = new bucket_arr_t(buckets_no);
@@ -88,15 +87,16 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
             } 
         }
 
-        t[local_time_ctr++] = omp_get_wtime();
+        if (omp_get_thread_num() == 0) t[time_ctr++] = omp_get_wtime();
 
-        // buckets sorting   
+        // buckets sorting
+        #pragma omp barierr
         #pragma omp for schedule(runtime)
         for (bid=0; bid<buckets_no; bid++) {
             std::sort(last_buckets[bid].container.begin(), last_buckets[bid].container.end());
         }
 
-        t[local_time_ctr++] = omp_get_wtime();
+        if (omp_get_thread_num() == 0) t[time_ctr++] = omp_get_wtime();
 
         // copying buckets to final array
         #pragma omp for schedule(runtime)
@@ -118,13 +118,12 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
             }
         }
 
-        t[local_time_ctr++] = omp_get_wtime();
-        time_ctr = local_time_ctr;
+        if (omp_get_thread_num() == 0) t[time_ctr++] = omp_get_wtime();
     }
 
     std::string t_names[32] = {""
         ,"random_generating"
-        ,"buckets_ins_filling_squash"
+        ,"buckets_ins_filling_(squash)"
         ,"buckets_sorting"
         ,"buckets_to_main_array"};
 
@@ -185,7 +184,7 @@ double* random_bucket_sort_seq(size_t n, double min, double max, size_t buckets_
 
     std::string t_names[32] = {""
         ,"random_generating"
-        ,"buckets_ins_and_filling"
+        ,"buckets_ins_and_filling(squash)"
         ,"buckets_sorting"
         ,"buckets_to_main_array"};
 
