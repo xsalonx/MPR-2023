@@ -121,6 +121,9 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
         if (omp_get_thread_num() == 0) t[time_ctr++] = omp_get_wtime();
     }
 
+
+    // results printing
+
     std::string t_names[32] = {""
         ,"random_generating"
         ,"buckets_ins_filling_(squash)"
@@ -182,6 +185,8 @@ double* random_bucket_sort_seq(size_t n, double min, double max, size_t buckets_
 
     t[time_ctr++] = omp_get_wtime();
 
+
+    // results printing
     std::string t_names[32] = {""
         ,"random_generating"
         ,"buckets_ins_and_filling(squash)"
@@ -208,15 +213,6 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
     return res;
 }
 
-
-
-void print_arr(double *ptr, size_t arr_size) {
-    printf("\nresults: ");
-    for (int i=0; i<arr_size; i++) {
-        printf("%lf ", ptr[i]);
-    }
-}
-
 int main(int argc, char **argv) {
     int parallel = atoi(argv[1]);
     size_t arr_size = strtoull(argv[2], NULL, 10);
@@ -229,7 +225,6 @@ int main(int argc, char **argv) {
         std::cout << "Not sorted" << std::endl;
         exit(1);
     }
-    printf("\n");
     return 0;
 }
 
