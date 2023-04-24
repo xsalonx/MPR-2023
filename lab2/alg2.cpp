@@ -114,7 +114,6 @@ void writeValuesToBuckets(double *ptr, size_t n, double min, double max, bucket_
 }
 
 void sortBuckets(bucket_t* buckets, size_t buckets_no) {
-    #pragma omp barrier
     #pragma omp for schedule(guided, 5)
     for (int i=0; i<buckets_no; i++) {
         auto& bucket = buckets[i].container;
@@ -123,7 +122,6 @@ void sortBuckets(bucket_t* buckets, size_t buckets_no) {
 }
 
 void mergeBuckets(double *ptr, bucket_t* buckets, size_t buckets_no) {
-    #pragma omp barrier
     for (int i = 0; i < buckets_no; i++) {
         if (i == 0)
             buckets[i].previousElements = 0;
@@ -169,60 +167,54 @@ bool is_bucket_sorted(double* arr, size_t n) {
     return true;
 }
 
+double average(double arr[], int size) {
+    double sum = 0.0;
+    for (int i = 0; i < size; i++) {
+        sum += arr[i];
+    }
+    return sum / size;
+}
+
 double* random_bucket_sort(int parallel, size_t n, double min, double max, size_t buckets_no) {
     double *ptr = (double*)malloc(sizeof(double) * n);
     double totalTimerStart = omp_get_wtime(), totalTimerEnd;
     double timerStart = omp_get_wtime(), timerEnd;
+    uint numOfThreads = omp_get_num_threads();
+    double timers[6][numOfThreads];
     unsigned short seed[3];
     bucket_t* buckets = new bucket_t[buckets_no];
     if (parallel) {
         #pragma omp parallel shared(ptr, buckets), private(seed)
         {
-            #pragma omp barrier
-            timerStart = omp_get_wtime();
+            uint threadId = omp_get_thread_num();
+            timers[0][threadId] = omp_get_wtime();
+
             parallel::generateRandomValues(ptr, n, min, max, seed);
-            #pragma omp barrier
-            timerEnd = omp_get_wtime();
-            if (omp_get_thread_num() == 0) {
-                printf("Time taken by generating random values: %lf\n", (timerEnd - timerStart));
-            }
+            
+            timers[1][threadId] = omp_get_wtime();
 
-            #pragma omp barrier
-            timerStart = omp_get_wtime();
             parallel::initializeBuckets(min, max, buckets, buckets_no);
-            #pragma omp barrier
-            timerEnd = omp_get_wtime();
-            if (omp_get_thread_num() == 0) {
-                printf("Time taken by initializing buckets: %lf\n", (timerEnd - timerStart));
-            }
+            
+            timers[2][threadId] = omp_get_wtime();
 
-            #pragma omp barrier
-            timerStart = omp_get_wtime();
             parallel::writeValuesToBuckets(ptr, n, min, max, buckets, buckets_no);
-            #pragma omp barrier
-            timerEnd = omp_get_wtime();
-            if (omp_get_thread_num() == 0) {
-                printf("Time taken by writing values to buckets: %lf\n", (timerEnd - timerStart));
-            }
+            
+            timers[3][threadId] = omp_get_wtime();
 
-            #pragma omp barrier
-            timerStart = omp_get_wtime();
             parallel::sortBuckets(buckets, buckets_no);
-            #pragma omp barrier
-            timerEnd = omp_get_wtime();
-            if (omp_get_thread_num() == 0) {
-                printf("Time taken by sorting inside buckets: %lf\n", (timerEnd - timerStart));
-            }
 
-            #pragma omp barrier
-            timerStart = omp_get_wtime();
+            timers[4][threadId] = omp_get_wtime();
+
             parallel::mergeBuckets(ptr, buckets, buckets_no);
-            #pragma omp barrier
-            timerEnd = omp_get_wtime();
-            if (omp_get_thread_num() == 0) {
-                printf("Time taken by merging buckets: %lf\n", (timerEnd - timerStart));
-            }
+            
+            timers[5][threadId] = omp_get_wtime();
         }
+
+        printf("Time taken by generating random values: %lf\n", (average(timers[1], numOfThreads) - average(timers[0], numOfThreads)));
+        printf("Time taken by initializing buckets: %lf\n", (average(timers[2], numOfThreads) - average(timers[1], numOfThreads)));
+        printf("Time taken by writing values to buckets: %lf\n", (average(timers[3], numOfThreads) - average(timers[2], numOfThreads)));
+        printf("Time taken by sorting inside buckets: %lf\n", (average(timers[4], numOfThreads) - average(timers[3], numOfThreads)));
+        printf("Time taken by merging buckets: %lf\n", (average(timers[5], numOfThreads) - average(timers[4], numOfThreads)));
 
     } else {
         timerStart = omp_get_wtime();
