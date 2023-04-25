@@ -1,6 +1,5 @@
 
-arr_s:10000000,buckets:100,0_random_generating:0.055863,1_buckets_ins_filling_(squash):0.167394,2_buckets_sorting:1.926659,3_buckets_to_main_array:0.054618,total_time:2.206954
-arr_s:10000000,buckets:100,0_random_generating:0.007594,1_buckets_ins_filling_(squash):0.055651,2_buckets_sorting:0.290334,3_buckets_to_main_array:0.011518,total_time:0.368200
-arr_s:10000000,buckets:200,0_random_generating:0.056768,1_buckets_ins_filling_(squash):0.167631,2_buckets_sorting:1.813465,3_buckets_to_main_array:0.055835,total_time:2.096696
-arr_s:10000000,buckets:200,0_random_generating:0.007616,1_buckets_ins_filling_(squash):0.058131,2_buckets_sorting:0.267709,3_buckets_to_main_array:0.011658,total_time:0.348827
-arr_s:10000000,buckets:300,0_random_generating:0.059545,1_buckets_ins_filling_(squash):0.193493,2_buckets_sorting:1.784798,3_buckets_to_main_array:0.056661,total_time:2.097767
+arr_s:10000000,buckets:100,0_random_generating:0.056332,1_buckets_ins_filling_(squash):0.164198,2_buckets_sorting:1.896079,3_buckets_to_main_array:0.052823,total_time:2.172600
+arr_s:10000000,buckets:100,0_random_generating:0.014304,1_buckets_ins_filling_(squash):0.221907,2_buckets_sorting:0.559270,3_buckets_to_main_array:0.011310,total_time:0.806842
+arr_s:10000000,buckets:100,0_random_generating:0.014296,1_buckets_ins_filling_(squash):0.110326,2_buckets_sorting:0.547906,3_buckets_to_main_array:0.018841,total_time:0.694984
+arr_s:10000000,buckets:200,0_random_generating:0.056963,1_buckets_ins_filling_(squash):0.164719,2_buckets_sorting:1.784744,3_buckets_to_main_array:0.053755,total_time:2.063755

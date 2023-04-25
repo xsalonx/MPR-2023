@@ -45,7 +45,7 @@ void initializeBuckets(double min, double max, bucket_t* buckets, size_t buckets
         buckets[i].l = border;
         border += one_b_width;
         buckets[i].r = border;
-        buckets[i].container.resize(arr_size / buckets_no);
+        // buckets[i].container.resize(arr_size / buckets_no);
     }
 }
 

@@ -72,7 +72,7 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
 
         // filling buckets
         bucket_arr_t* my_buckets = new bucket_arr_t(buckets_no);
-        initializeBuckets(my_buckets, buckets_no, n);
+        // initializeBuckets(my_buckets, buckets_no, n);
         th_buckets[tid] = my_buckets;
         int bid;
         double v;
