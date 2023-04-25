@@ -164,7 +164,7 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
             #pragma omp barrier
             timerStart = omp_get_wtime();
             initializeBuckets(min, max, buckets, buckets_no);
-            
+
             #pragma omp barrier
             writeValuesToBuckets(ptr, n, min, max, buckets, buckets_no);
             #pragma omp barrier
@@ -216,6 +216,7 @@ int main(int argc, char **argv) {
     int parallel = atoi(argv[1]);
     size_t arr_size = strtoull(argv[2], NULL, 10);
     size_t buckets_no = strtoull(argv[3], NULL, 10);
+    printf("arr_s:%d,buckets:%d,", arr_size, buckets_no);
     double* ptr = random_bucket_sort(parallel, arr_size, 0, 10, buckets_no);
     free(ptr);
     return 0;

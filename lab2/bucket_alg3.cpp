@@ -133,7 +133,7 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
 
     printf("%d_%s:%lf", 0, t_names[1].c_str(), t[1] - t[0]);
     for (int i=2; i<time_ctr; i++) {
-        printf(",%d-%s:%lf", i - 1, t_names[i].c_str(), t[i] - t[i-1]);
+        printf(",%d_%s:%lf", i - 1, t_names[i].c_str(), t[i] - t[i-1]);
     }
     return ptr;
 }
@@ -196,7 +196,7 @@ double* random_bucket_sort_seq(size_t n, double min, double max, size_t buckets_
 
     printf("%d_%s:%lf", 0, t_names[1].c_str(), t[1] - t[0]);
     for (int i=2; i<time_ctr; i++) {
-        printf(",%d-%s:%lf", i - 1, t_names[i].c_str(), t[i] - t[i-1]);
+        printf(",%d_%s:%lf", i - 1, t_names[i].c_str(), t[i] - t[i-1]);
     }
     return ptr;
 }
@@ -218,6 +218,7 @@ int main(int argc, char **argv) {
     int parallel = atoi(argv[1]);
     size_t arr_size = strtoull(argv[2], NULL, 10);
     size_t buckets_no = strtoull(argv[3], NULL, 10);
+    printf("arr_s:%d,buckets:%d,", arr_size, buckets_no);
     double* ptr = random_bucket_sort(parallel, arr_size, 0, 10, buckets_no);
     bool sorted = std::is_sorted(ptr, ptr + arr_size);
     free(ptr);
