@@ -36,6 +36,11 @@ void print_buckets(bucket_arr_t &buckets) {
     }
 }
 
+void initializeBuckets(bucket_arr_t* buckets, size_t buckets_no, size_t arr_size) {
+    for (int i=0; i<buckets_no; i++) {
+        (*buckets)[i].container.resize(arr_size / buckets_no);
+    }
+}
 
 
 double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buckets_no) {
@@ -67,6 +72,7 @@ double* random_bucket_sort_parallel(size_t n, double min, double max, size_t buc
 
         // filling buckets
         bucket_arr_t* my_buckets = new bucket_arr_t(buckets_no);
+        initializeBuckets(my_buckets, buckets_no, n);
         th_buckets[tid] = my_buckets;
         int bid;
         double v;

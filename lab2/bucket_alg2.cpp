@@ -38,13 +38,14 @@ double getBucketWidth(double min, double max, size_t buckets_no) {
     return (max - min) / buckets_no;
 }
 
-void initializeBuckets(double min, double max, bucket_t* buckets, size_t buckets_no) {
+void initializeBuckets(double min, double max, bucket_t* buckets, size_t buckets_no, size_t arr_size) {
     double one_b_width = getBucketWidth(min, max, buckets_no);
     double border = min;
     for (int i=0; i<buckets_no; i++) {
         buckets[i].l = border;
         border += one_b_width;
         buckets[i].r = border;
+        buckets[i].container.resize(arr_size / buckets_no);
     }
 }
 
@@ -142,7 +143,7 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
             
             timers[1][threadId] = omp_get_wtime();
 
-            parallel::initializeBuckets(min, max, buckets, buckets_no);
+            parallel::initializeBuckets(min, max, buckets, buckets_no, n);
             
             timers[2][threadId] = omp_get_wtime();
 
