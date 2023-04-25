@@ -161,12 +161,11 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
     }
 
     totalTimerEnd = omp_get_wtime();
-    printf("Total taken time: %lf\n", (totalTimerEnd - totalTimerStart));
-    if (is_bucket_sorted(ptr, n)) {
+    /*if (is_bucket_sorted(ptr, n)) {
         printf("Bucket is sorted\n");
     } else {
         printf("Bucket is NOT sorted\n");
-    }
+    }*/
 
     printf("0_random_generating:%lf,1_buckets_ins_filling_(squash):%lf,2_buckets_sorting:%lf,3_buckets_to_main_array:%lf,total_time:%lf\n",
         average(timers[1], numOfThreads) - average(timers[0], numOfThreads),
