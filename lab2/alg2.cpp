@@ -158,22 +158,23 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
             
             timers[5][threadId] = omp_get_wtime();
         }
-
-        printf("Time taken by generating random values: %lf\n", (average(timers[1], numOfThreads) - average(timers[0], numOfThreads)));
-        printf("Time taken by initializing buckets: %lf\n", (average(timers[2], numOfThreads) - average(timers[1], numOfThreads)));
-        printf("Time taken by writing values to buckets: %lf\n", (average(timers[3], numOfThreads) - average(timers[2], numOfThreads)));
-        printf("Time taken by sorting inside buckets: %lf\n", (average(timers[4], numOfThreads) - average(timers[3], numOfThreads)));
-        printf("Time taken by merging buckets: %lf\n", (average(timers[5], numOfThreads) - average(timers[4], numOfThreads)));
-
     }
 
     totalTimerEnd = omp_get_wtime();
-    printf("Total taken time: %lf\n", (totalTimerEnd - totalTimerStart));
-    if (is_bucket_sorted(ptr, n)) {
+    /*if (is_bucket_sorted(ptr, n)) {
         printf("Bucket is sorted\n");
     } else {
         printf("Bucket is NOT sorted\n");
-    }
+    }*/
+
+    printf("0_random_generating:%lf,1_buckets_ins_filling_(squash):%lf,2_buckets_sorting:%lf,3_buckets_to_main_array:%lf,total_time:%lf\n",
+        average(timers[1], numOfThreads) - average(timers[0], numOfThreads),
+        average(timers[3], numOfThreads) - average(timers[1], numOfThreads),
+        average(timers[4], numOfThreads) - average(timers[3], numOfThreads),
+        average(timers[5], numOfThreads) - average(timers[4], numOfThreads),
+        totalTimerEnd - totalTimerStart
+        );
+
     return ptr;
 }
 
@@ -181,7 +182,9 @@ double* random_bucket_sort(int parallel, size_t n, double min, double max, size_
 int main(int argc, char **argv) {
     int parallel = atoi(argv[1]);
     size_t arr_size = strtoull(argv[2], NULL, 10);
-    double* ptr = random_bucket_sort(parallel, arr_size, 0, 10, 1000);
+    size_t buckets_no = strtoull(argv[3], NULL, 10);
+    printf("arr_s:%d,buckets:%d,", arr_size, buckets_no);
+    double* ptr = random_bucket_sort(parallel, arr_size, 0, 10, buckets_no);
     free(ptr);
     return 0;
 }
