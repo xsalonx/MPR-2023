@@ -108,7 +108,7 @@ for (( s=$START_SIZE; s <= $MAX_NSIZE; s+=$STEP )); do
     CHUNK_SIZE_DIV='0'
     OMP_SCHEDULE='seq'
     sch_t='seq'
-    mk_meas 0
+    push_backmk_meas 0
 # parallel auto
     chunk_size='0'
     CHUNK_SIZE_DIV='0'
