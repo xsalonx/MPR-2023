@@ -28,7 +28,7 @@ void generateRandomValues(double * ptr, size_t n, double min, double max, unsign
     int tid = omp_get_thread_num();
     seed[0] = ((tid * tid + 15) * 3)/7;
 
-    #pragma omp for schedule(guided, 5)
+    #pragma omp for schedule(runtime)
     for (size_t i=0; i < n; i++) {
         pp[i] =  min + erand48(seed) * (max- min);
     }
@@ -52,7 +52,7 @@ void writeValuesToBuckets(double *ptr, size_t n, double min, double max, bucket_
     double one_b_width = getBucketWidth(min, max, buckets_no);
     double v;
     int b_id;
-    #pragma omp for schedule(guided, 5)
+    #pragma omp for schedule(runtime)
     for (int i=0; i<n; i++) {
         v = ptr[i];
         b_id = get_bucket_id(v, min, one_b_width);
@@ -63,7 +63,7 @@ void writeValuesToBuckets(double *ptr, size_t n, double min, double max, bucket_
 }
 
 void sortBuckets(bucket_t* buckets, size_t buckets_no) {
-    #pragma omp for schedule(guided, 5)
+    #pragma omp for schedule(runtime)
     for (int i=0; i<buckets_no; i++) {
         auto& bucket = buckets[i].container;
         sort(bucket.begin(), bucket.end());
@@ -78,7 +78,7 @@ void mergeBuckets(double *ptr, bucket_t* buckets, size_t buckets_no) {
             buckets[i].previousElements = buckets[i - 1].previousElements + buckets[i - 1].container.size();
     }
 
-    #pragma omp for schedule(guided, 5)
+    #pragma omp for schedule(runtime)
     for (int bucket_id=0; bucket_id < buckets_no; bucket_id++) {
         int offset = buckets[bucket_id].previousElements;
         for (int i = 0; i < buckets[bucket_id].container.size(); i++) {
