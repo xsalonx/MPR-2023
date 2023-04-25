@@ -27,7 +27,7 @@ BUCKETS_NO=${3:-1000}
 PROG_NAME="bucket_alg$ALGO.bin"
 SRC_NAME="bucket_alg$ALGO.cpp"
 
-export OMP_NUM_THREADS=${OMP_NUM_THREADS:-4}
+export OMP_NUM_THREADS=${OMP_NUM_THREADS:-14}
 export OMP_SCHEDULE='auto';
 
 g++ -std=c++11 -w -Wall $SRC_NAME -o $BUILD_DIR/$PROG_NAME -fopenmp || exit 1
